@@ -1,0 +1,89 @@
+# THE AXIOM: Strategic Selector Registry v1.5 [Aegis Optimized]
+# วัตถุประสงค์: ควบคุมกลยุทธ์การสกัดข้อมูลรายพิกัดสำหรับ 130 รายการ
+# การปิดจุดอ่อน: บังคับใช้ระบบกรองค่าขยะ (Blacklist) และระบบสลับ Engine อัตโนมัติ
+
+global_config:
+  default_timeout: 45000
+  human_delay_range: [1.5, 3.5]
+  # ป้องกันเลขขยะที่มักติดมาจาก CSS styles (เช่น font-weight: 600)
+  blacklist_values: [60000.0, 10000.0, 0.0, 200.0, 404.0]
+
+overrides:
+  # --- 1. กลุ่มดัชนีตลาดทุนระดับโลก (Engine: Playwright เพื่อทะลวง 403) ---
+  nkm:
+    name_th: "นิเคอิ"
+    engine: "playwright"
+    css: "span.mkc-stock_prices_price"
+    wait_for: 5000
+    parser: "finance"
+
+  hsi-morning:
+    name_th: "ฮั่งเส็ง (เช้า)"
+    engine: "playwright"
+    css: ".index-value-container"
+    wait_for: 6000
+
+  egx30:
+    name_th: "หุ้นอียิปต์"
+    engine: "playwright"
+    css: "span.priceText__1853e8a5"
+    wait_for: 5000
+
+  szse-morning:
+    name_th: "จีน (เช้า)"
+    engine: "playwright"
+    css: "span.last-price"
+    wait_for: 4000
+
+  # --- 2. กลุ่มพิกัดเสถียรภาพสูง (Engine: HTTPX เพื่อความเร็ว) ---
+  dj:
+    name_th: "ดาวโจนส์"
+    engine: "httpx"
+    css: "div.YMlKec.fxKbKc" # Google Finance Precise Class
+    regex_fallback: "Last\\sPrice.*?(\\d{2,5}\\.\\d{2})"
+
+  twse:
+    name_th: "ไต้หวัน"
+    engine: "httpx"
+    css: "div.YMlKec.fxKbKc"
+
+  th_gv:
+    name_th: "สลากกินแบ่งรัฐบาล"
+    engine: "httpx"
+    css: "strong#number-first" # อ้างอิง Sanook พิกัดใหม่
+    regex_fallback: "รางวัลที่\\s?1.*?(\\d{6})"
+
+  # --- 3. กลุ่มหน่วยงานรัฐที่ต้องเรนเดอร์ (Engine: Playwright) ---
+  baac:
+    name_th: "ธ.ก.ส."
+    engine: "playwright"
+    css: "#num_draw"
+    wait_for: 5000
+
+  gsb:
+    name_th: "ออมสิน"
+    engine: "playwright"
+    css: ".lotto-result-number"
+    wait_for: 5000
+
+  # --- 4. กลุ่มเครือข่าย VISA & ภูมิภาค (Pattern Based) ---
+  hanoivisa:
+    name_th: "ฮานอย VISA"
+    engine: "httpx"
+    css: "div.result-number"
+    regex_fallback: "\\b\\d{5}\\b"
+
+  lao-visa:
+    name_th: "ลาว VISA"
+    engine: "httpx"
+    css: ".winning-number"
+    regex_fallback: "\\b\\d{5}\\b"
+
+  maekhongtoday:
+    name_th: "แม่โขงทูเดย์"
+    engine: "httpx"
+    css: "span.latest-result"
+    regex_fallback: "(\\d{4,6})"
+
+# หมายเหตุเชิงยุทธศาสตร์: รายการอื่นๆ ที่ไม่ได้ระบุในนี้ ระบบจะใช้ Aegis Generic Parser 
+# สแกนหาตัวเลข 5-6 หลักโดยอัตโนมัติ พร้อมตรวจสอบ Blacklist ทันที

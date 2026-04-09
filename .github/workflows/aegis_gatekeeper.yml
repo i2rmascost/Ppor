@@ -1,0 +1,47 @@
+# THE AXIOM: Aegis Gatekeeper CI Pipeline v1.0
+# วัตถุประสงค์: สกัดกั้น Configuration หรือ Code ที่ผิดพลาดก่อนขึ้น Production
+
+name: Aegis Gatekeeper Validation
+
+on:
+  pull_request:
+    branches: [ "main", "production" ]
+    paths:
+      - 'data/selector_overrides.yaml'
+      - 'engines/scraper.py'
+      - 'tests/**'
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.10 (Axiom Standard)
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install Validation Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest jsonschema pyyaml beautifulsoup4 httpx
+
+    - name: Phase 1 - YAML Schema Validation
+      run: |
+        echo "🚀 Initiating Strict YAML Schema Validation..."
+        pytest tests/test_yaml_schema.py -v
+
+    - name: Phase 2 - Parser Regression & Unit Tests
+      run: |
+        echo "🧪 Initiating Mock HTML Parser Tests..."
+        pytest tests/test_parser_logic.py -v
+
+    - name: Phase 3 - Security & Hardcode Check
+      run: |
+        echo "🔐 Scanning for exposed tokens..."
+        ! grep -r "AXIOM_SECURE_TOKEN" data/ || echo "Warning: Token found in data dir!"
+        # ในระบบจริงควรใช้เครื่องมืออย่าง TruffleHog หรือ GitLeaks
