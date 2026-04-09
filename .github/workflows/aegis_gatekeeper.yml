@@ -1,12 +1,12 @@
-# THE AXIOM: Aegis Gatekeeper CI Pipeline v1.1
+# THE AXIOM: Aegis Gatekeeper CI Pipeline v1.3
 # วัตถุประสงค์: สกัดกั้น Configuration หรือ Code ที่ผิดพลาดก่อนขึ้น Production
-# ปรับปรุง: เพิ่มทริกเกอร์ 'push' เพื่อให้ทำงานทันทีเมื่อยิงโค้ดเข้า main
+# การปรับปรุง: อัปเกรด Checkout v4 และ Setup-Python v5 ป้องกัน Node.js 20 Deprecation
 
 name: Aegis Gatekeeper Validation
 
 on:
   push:
-    branches: [ "main" ] # บังคับให้ทำงานทันทีที่ Push เข้า main
+    branches: [ "main" ] 
   pull_request:
     branches: [ "main", "production" ]
 
@@ -16,10 +16,10 @@ jobs:
     
     steps:
     - name: Checkout Code Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python 3.10 (Axiom Standard)
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
         cache: 'pip'
@@ -42,4 +42,4 @@ jobs:
     - name: Phase 3 - Security Check
       run: |
         echo "🔐 Scanning for exposed tokens..."
-        ! grep -r "AXIOM_SECURE_TOKEN" data/ || echo "Warning: Default Token signature detected."
+        ! grep -r "AXIOM_SECURE_TOKEN_V3_2026" data/ || echo "Warning: Default Token signature detected."
