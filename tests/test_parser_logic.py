@@ -1,5 +1,6 @@
-# --- THE AXIOM: Parser Logic & Regression Tests ---
+# --- THE AXIOM: Parser Logic & Regression Tests v1.1 ---
 # พิกัด: tests/test_parser_logic.py
+# การปรับปรุง: แก้ไขบั๊ก Regex \n และการกรองเครื่องหมายติดลบ (-)
 
 import pytest
 import re
@@ -16,7 +17,8 @@ def parse_mock_html(html: str, css: str, regex_fb: str) -> float | None:
         raw_val = elem.get_text(strip=True) if elem else None
         
     if not raw_val and regex_fb:
-        clean_text = soup.get_text(separator=' ').replace(',', '').replace(' ', '')
+        # ปิดจุดอ่อน 1: ใช้ re.sub ลบช่องว่างและ \n ทุกชนิด เพื่อเชื่อมข้อความให้ติดกัน
+        clean_text = re.sub(r'\s+', '', soup.get_text()).replace(',', '')
         match = re.search(regex_fb, clean_text)
         if match:
             # ใช้ Group 1 ถ้ามีกำหนดใน Regex, ถ้าไม่มีใช้ Group 0
@@ -24,10 +26,11 @@ def parse_mock_html(html: str, css: str, regex_fb: str) -> float | None:
             
     if not raw_val: return None
     
-    # Clean & Validate
-    clean_str = ''.join(c for c in str(raw_val) if c.isdigit() or c == '.')
+    # ปิดจุดอ่อน 2: อนุญาตให้มีเครื่องหมาย '-' เพื่อให้แปลงค่าติดลบได้ถูกต้อง
+    clean_str = ''.join(c for c in str(raw_val) if c.isdigit() or c in '.-')
     try:
         val = float(clean_str)
+        # กฎหมายมหาภพ: ข้อมูลต้องไม่เป็น Blacklist และต้องมากกว่า 0
         if val in [60000.0, 10000.0, 0.0] or val <= 0: return None
         return val
     except:
@@ -36,7 +39,7 @@ def parse_mock_html(html: str, css: str, regex_fb: str) -> float | None:
 # --- Test Cases ---
 
 def test_finance_index_css_parsing():
-    """ทดสอบพิกัด CSS สำหรับตลาดหุ้น (เช่น Google Finance)"""
+    """ทดสอบพิกัด CSS สำหรับตลาดหุ้น"""
     mock_html = """
     <html>
         <body>
@@ -49,7 +52,7 @@ def test_finance_index_css_parsing():
     assert result == 39069.23, f"Expected 39069.23, got {result}"
 
 def test_lottery_regex_fallback():
-    """ทดสอบ Regex Fallback เมื่อ CSS พัง (โครงสร้างเว็บเปลี่ยน)"""
+    """ทดสอบ Regex Fallback เมื่อ CSS พัง"""
     mock_html = """
     <html>
         <body>
@@ -61,7 +64,6 @@ def test_lottery_regex_fallback():
         </body>
     </html>
     """
-    # ทดสอบการใช้ Regex ทะลวงหาเลขหลังคำว่า "รางวัลที่ 1"
     regex = r"รางวัลที่\s?1.*?(\d{6})"
     result = parse_mock_html(mock_html, css="strong#number-first", regex_fb=regex)
     assert result == 827364.0, f"Regex Fallback failed, got {result}"
