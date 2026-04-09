@@ -1,15 +1,14 @@
-# THE AXIOM: Aegis Gatekeeper CI Pipeline v1.0
+# THE AXIOM: Aegis Gatekeeper CI Pipeline v1.1
 # วัตถุประสงค์: สกัดกั้น Configuration หรือ Code ที่ผิดพลาดก่อนขึ้น Production
+# ปรับปรุง: เพิ่มทริกเกอร์ 'push' เพื่อให้ทำงานทันทีเมื่อยิงโค้ดเข้า main
 
 name: Aegis Gatekeeper Validation
 
 on:
+  push:
+    branches: [ "main" ] # บังคับให้ทำงานทันทีที่ Push เข้า main
   pull_request:
     branches: [ "main", "production" ]
-    paths:
-      - 'data/selector_overrides.yaml'
-      - 'engines/scraper.py'
-      - 'tests/**'
 
 jobs:
   validate-and-test:
@@ -40,8 +39,7 @@ jobs:
         echo "🧪 Initiating Mock HTML Parser Tests..."
         pytest tests/test_parser_logic.py -v
 
-    - name: Phase 3 - Security & Hardcode Check
+    - name: Phase 3 - Security Check
       run: |
         echo "🔐 Scanning for exposed tokens..."
-        ! grep -r "AXIOM_SECURE_TOKEN" data/ || echo "Warning: Token found in data dir!"
-        # ในระบบจริงควรใช้เครื่องมืออย่าง TruffleHog หรือ GitLeaks
+        ! grep -r "AXIOM_SECURE_TOKEN" data/ || echo "Warning: Default Token signature detected."
